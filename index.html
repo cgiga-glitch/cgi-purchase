@@ -559,7 +559,14 @@
     <strong>Julian</strong> will review and respond via email.<br>
     You will be notified once a decision is made.</p>
     <br>
-    <button class="btn btn-primary" onclick="closeSuccess()" style="width:100%">Submit Another Request</button>
+    <div id="successButtons" style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn btn-primary" onclick="closeSuccess()" style="flex:1">New Request</button>
+      <button class="btn btn-secondary" onclick="doneDismiss()" style="flex:1">Done</button>
+    </div>
+    <div id="doneMessage" style="display:none;margin-top:16px;padding:14px;background:#f0f4f8;border-radius:10px;">
+      <p style="color:#1a3a5c;font-weight:bold;margin:0;">Request complete!</p>
+      <p style="color:#6b7280;font-size:13px;margin:6px 0 0;">You may now close this tab.</p>
+    </div>
   </div>
 </div>
 
@@ -582,7 +589,7 @@
     "Sun Institute Manager": "manager@njintegrativehealth.com",
     "Sun Institute Assist":  "info@njintegrativehealth.com"
   };
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBMI46WpXhk5HiSzmy9tp6duzBKVwLO1eqoIPkWe0fWKxf7pkhKXCCkIifBpd--A1Y/exec";
+  const APPS_SCRIPT_URL = "<?= scriptUrl ?>";
 
   // ── State ───────────────────────────────────────────────────
   let photos    = [];   // File objects (max 3)
@@ -697,6 +704,11 @@
   function closeSuccess() {
     document.getElementById("successOverlay").classList.remove("active");
     resetForm();
+  }
+
+  function doneDismiss() {
+    document.getElementById("doneMessage").style.display = "block";
+    document.getElementById("successButtons").style.display = "none";
   }
 
   // ── Submit ───────────────────────────────────────────────────
