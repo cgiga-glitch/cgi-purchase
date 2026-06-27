@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CGI Purchase Request</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #e8edf5 0%, #dde5f0 100%);
+    min-height: 100vh;
+    padding: 24px 16px 40px;
+  }
+
+  .container { max-width: 740px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #0f2440 100%);
+    color: white;
+    padding: 26px 32px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 4px 20px rgba(26,58,92,0.3);
+  }
+  .header-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .header h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }
+  .header p  { font-size: 13px; opacity: 0.7; margin-top: 3px; }
+
+  /* ── NOTICE ── */
+  .notice-bar {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: #78350f;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  /* ── SECTION BLOCKS ── */
+  .section-block {
+    margin-bottom: 6px;
+  }
+  .section-block:last-of-type { margin-bottom: 0; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: white;
+  }
+  .section-header .sec-icon {
+    font-size: 16px;
+  }
+
+  /* Block color themes */
+  .block-blue   .section-header { background: #2563eb; }
+  .block-teal   .section-header { background: #0d9488; }
+  .block-violet .section-header { background: #7c3aed; }
+  .block-orange .section-header { background: #ea580c; }
+
+  .section-body {
+    background: white;
+    padding: 22px 24px;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+  }
+
+  /* Last block gets rounded bottom */
+  .section-block:last-of-type .section-body {
+    border-radius: 0 0 16px 16px;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .form-row.full  { grid-template-columns: 1fr; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row:last-child { margin-bottom: 0; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  label .req { color: #ef4444; margin-left: 2px; }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  select,
+  textarea {
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 14px;
+    color: #111827;
+    background: #fff;
+    width: 100%;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+  .readonly-field {
+    background: #f3f4f6 !important;
+    color: #6b7280 !important;
+    cursor: not-allowed;
+  }
+  textarea { resize: vertical; min-height: 82px; }
+
+  /* ── PRICE ROW ── */
+  .total-box {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border: 1.5px solid #93c5fd;
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #1d4ed8;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── URGENCY TOGGLE ── */
+  .urgency-group { display: flex; gap: 12px; }
+  .urgency-option { flex: 1; position: relative; }
+  .urgency-option input[type="radio"] { position: absolute; opacity: 0; width: 0; }
+  .urgency-option label {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    transition: all 0.18s;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .urgency-option input:checked + label {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+  .urgency-option.urgent input:checked + label {
+    border-color: #dc2626;
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  /* ── PHOTO UPLOAD ── */
+  .upload-zone {
+    border: 2px dashed #93c5fd;
+    border-radius: 10px;
+    background: #f0f7ff;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover { border-color: #2563eb; background: #eff6ff; }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    border: none; padding: 0; width: 100%;
+  }
+  .upload-zone .uz-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-zone .uz-label { font-size: 13px; color: #2563eb; font-weight: 600; }
+  .upload-zone .uz-sub   { font-size: 11.5px; color: #6b7280; margin-top: 3px; }
+
+  .photo-previews {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .photo-thumb {
+    position: relative;
+    width: 88px; height: 88px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid #d1d5db;
+    background: #f3f4f6;
+  }
+  .photo-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .photo-thumb .remove-btn {
+    position: absolute; top: 3px; right: 3px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px; height: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .photo-count {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 6px;
+  }
+
+  /* ── ATTACHMENT UPLOAD ── */
+  .attach-zone {
+    border: 2px dashed #c4b5fd;
+    border-radius: 10px;
+    background: #faf5ff;
+    padding: 16px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .attach-zone:hover { border-color: #7c3aed; background: #f5f3ff; }
+  .attach-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    border: none; padding: 0; width: 100%;
+  }
+  .attach-zone .uz-label { font-size: 13px; color: #7c3aed; font-weight: 600; }
+  .attach-zone .uz-sub   { font-size: 11.5px; color: #6b7280; margin-top: 3px; }
+
+  .attach-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .attach-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 13px;
+    color: #374151;
+  }
+  .attach-item .attach-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 85%; }
+  .attach-item .remove-btn {
+    background: none; border: none; color: #7c3aed;
+    font-size: 14px; cursor: pointer; flex-shrink: 0;
+  }
+
+  /* ── SUBMIT ── */
+  .submit-block {
+    background: white;
+    border-radius: 0 0 16px 16px;
+    padding: 22px 24px;
+    border: 1px solid #e5e7eb;
+    border-top: 3px solid #1a3a5c;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+  .btn {
+    padding: 12px 28px;
+    border-radius: 9px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+  }
+  .btn-secondary { background: #f3f4f6; color: #374151; }
+  .btn-secondary:hover { background: #e5e7eb; }
+  .btn-primary {
+    background: linear-gradient(135deg, #1a3a5c, #0f2440);
+    color: white;
+    min-width: 170px;
+    box-shadow: 0 4px 12px rgba(26,58,92,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(26,58,92,0.4); }
+  .btn-primary:disabled { background: #9ca3af; box-shadow: none; transform: none; cursor: not-allowed; }
+
+  /* ── SUCCESS OVERLAY ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .overlay.active { display: flex; }
+  .success-card {
+    background: white; border-radius: 20px;
+    padding: 44px 40px; max-width: 420px; width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .success-icon { font-size: 60px; margin-bottom: 16px; }
+  .success-card h2 { color: #1a3a5c; font-size: 22px; margin-bottom: 8px; }
+  .success-card p  { color: #6b7280; font-size: 14px; line-height: 1.7; }
+  .req-id-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border: 1.5px solid #93c5fd;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 18px; font-weight: 800;
+    color: #1d4ed8;
+    margin: 16px 0;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── SPINNER ── */
+  .spinner {
+    display: inline-block; width: 18px; height: 18px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 580px) {
+    .form-row       { grid-template-columns: 1fr; }
+    .form-row.three { grid-template-columns: 1fr 1fr; }
+    .section-body   { padding: 18px 16px; }
+    .header         { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <img src="data:image/png;base64,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" alt="CGI Holistic Fitness & Spa" style="height:48px;width:auto;border-radius:6px;">
+    <div>
+      <h1>Purchase Request</h1>
+      <p>General Affairs Department</p>
+    </div>
+  </div>
+
+  <!-- NOTICE -->
+  <div class="notice-bar">
+    ⚠️ &nbsp;Fields marked <strong>*</strong> are required. Your request will be emailed to Julian for approval. You will be notified of the decision by email.
+  </div>
+
+  <form id="purchaseForm" onsubmit="handleSubmit(event)">
+
+    <!-- ① REQUESTER INFORMATION -->
+    <div class="section-block block-blue">
+      <div class="section-header">
+        <span class="sec-icon">👤</span> Requester Information
+      </div>
+      <div class="section-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Requester Name <span class="req">*</span></label>
+            <input type="text" id="requesterName" placeholder="Full Name" required>
+          </div>
+          <div class="form-group">
+            <label>Department <span class="req">*</span></label>
+            <select id="department" required onchange="onDeptChange()">
+              <option value="">— Select Department —</option>
+              <option>General Affair</option>
+              <option>Facility</option>
+              <option>Front Desk</option>
+              <option>Esse Rose Spa</option>
+              <option>Healing Center</option>
+              <option>General Manager</option>
+              <option>Accounting</option>
+              <option>Sales</option>
+              <option>Marketing</option>
+              <option>BnB</option>
+              <option>Maintenance</option>
+              <option>Swimming Pool</option>
+              <option>Gym</option>
+              <option>Sun Institute Manager</option>
+              <option>Sun Institute Assist</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Department Email</label>
+            <input type="email" id="requesterEmail" class="readonly-field" readonly placeholder="Auto-filled by department">
+          </div>
+          <div class="form-group">
+            <label>Request Date</label>
+            <input type="text" id="requestDate" class="readonly-field" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② ITEM INFORMATION -->
+    <div class="section-block block-teal">
+      <div class="section-header">
+        <span class="sec-icon">📦</span> Item Information
+      </div>
+      <div class="section-body">
+
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Item Name <span class="req">*</span></label>
+            <input type="text" id="itemName" placeholder="e.g. Paper Towels, Pool Chemicals, Office Chair" required>
+          </div>
+        </div>
+
+        <div class="form-row three">
+          <div class="form-group">
+            <label>Quantity <span class="req">*</span></label>
+            <input type="number" id="quantity" min="1" placeholder="0" required oninput="calcTotal()">
+          </div>
+          <div class="form-group">
+            <label>Unit</label>
+            <select id="unit">
+              <option>EA (each)</option>
+              <option>Box</option>
+              <option>Case</option>
+              <option>Pack</option>
+              <option>Roll</option>
+              <option>Bag</option>
+              <option>Bottle</option>
+              <option>Gallon</option>
+              <option>Set</option>
+              <option>Pair</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Est. Unit Price ($)</label>
+            <input type="number" id="unitPrice" min="0" step="0.01" placeholder="0.00" oninput="calcTotal()">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Estimated Total ($)</label>
+            <div class="total-box" id="totalDisplay">$0.00</div>
+          </div>
+          <div class="form-group">
+            <label>Preferred Vendor</label>
+            <input type="text" id="vendor" placeholder="e.g. Amazon, Home Depot (optional)">
+          </div>
+        </div>
+
+        <!-- PHOTOS -->
+        <div class="form-row full" style="margin-top:8px;">
+          <div class="form-group">
+            <label>Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#6b7280;">(max 3 photos)</span></label>
+            <div class="upload-zone" id="photoZone">
+              <input type="file" id="photoInput" accept="image/*" capture="environment" multiple onchange="handlePhotos(event)">
+              <div class="uz-icon">📷</div>
+              <div class="uz-label">Tap to take a photo or select from gallery</div>
+              <div class="uz-sub">JPG, PNG, HEIC · max 3 photos</div>
+            </div>
+            <div class="photo-previews" id="photoPreviews"></div>
+            <div class="photo-count" id="photoCount"></div>
+          </div>
+        </div>
+
+        <!-- ATTACHMENTS -->
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Attachments <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#6b7280;">(quotes, invoices, spec sheets…)</span></label>
+            <div class="attach-zone">
+              <input type="file" id="attachInput" multiple onchange="handleAttach(event)">
+              <div class="uz-label">📎 &nbsp;Click to attach files</div>
+              <div class="uz-sub">PDF, Excel, Word, images — any format accepted</div>
+            </div>
+            <div class="attach-list" id="attachList"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ③ PURPOSE & NOTES -->
+    <div class="section-block block-violet">
+      <div class="section-header">
+        <span class="sec-icon">📝</span> Purpose & Notes
+      </div>
+      <div class="section-body">
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Purpose / Reason <span class="req">*</span></label>
+            <textarea id="purpose" placeholder="Briefly describe why this item is needed..." required></textarea>
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Additional Notes</label>
+            <textarea id="notes" placeholder="Product link, model number, or any other details..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ URGENCY -->
+    <div class="section-block block-orange">
+      <div class="section-header">
+        <span class="sec-icon">⚡</span> Urgency
+      </div>
+      <div class="section-body">
+        <div class="form-group">
+          <label>Priority Level <span class="req">*</span></label>
+          <div class="urgency-group">
+            <div class="urgency-option">
+              <input type="radio" name="urgency" id="urgNormal" value="Normal" checked>
+              <label for="urgNormal">🟢&nbsp; Normal</label>
+            </div>
+            <div class="urgency-option urgent">
+              <input type="radio" name="urgency" id="urgUrgent" value="Urgent">
+              <label for="urgUrgent">🔴&nbsp; Urgent</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="submit-block">
+      <button type="button" class="btn btn-secondary" onclick="resetForm()">Clear Form</button>
+      <button type="submit" class="btn btn-primary" id="submitBtn">🚀 &nbsp;Submit Request</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <h2>Request Submitted!</h2>
+    <div class="req-id-badge" id="successReqId">REQ-2026-0001</div>
+    <p>Your purchase request has been submitted.<br>
+    <strong>Julian</strong> will review and respond via email.<br>
+    You will be notified once a decision is made.</p>
+    <br>
+    <button class="btn btn-primary" onclick="closeSuccess()" style="width:100%">Submit Another Request</button>
+  </div>
+</div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  const DEPT_EMAIL = {
+    "General Affair":        "cgiga@cgiholisticfitness.com",
+    "Facility":              "fm@cgihoisticfitness.com",
+    "Front Desk":            "frontdesk@cgihoisticfitness.com",
+    "Esse Rose Spa":         "spa@cgihoisticfitness.com",
+    "Healing Center":        "hc@cgihoisticfitness.com",
+    "General Manager":       "gm@cgihoisticfitness.com",
+    "Accounting":            "am@cgihoisticfitness.com",
+    "Sales":                 "membership@cgihoisticfitness.com",
+    "Marketing":             "wellness@cgihoisticfitness.com",
+    "BnB":                   "cig@bodynbrain.com",
+    "Maintenance":           "facility@cgihoisticfitness.com",
+    "Swimming Pool":         "swim@cgihoisticfitness.com",
+    "Gym":                   "swim@cgihoisticfitness.com",
+    "Sun Institute Manager": "manager@njintegrativehealth.com",
+    "Sun Institute Assist":  "info@njintegrativehealth.com"
+  };
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyfv9KpriRUT3GFFHDX0Qouo2PLdDYp5SYxdurSomWicGYnbvNJ92DgiParnYrheXDg/exec";
+
+  // ── State ───────────────────────────────────────────────────
+  let photos    = [];   // File objects (max 3)
+  let attachments = []; // File objects (unlimited)
+
+  // ── Init ────────────────────────────────────────────────────
+  window.onload = () => {
+    const now = new Date();
+    document.getElementById("requestDate").value =
+      now.toLocaleDateString("en-US", { year:"numeric", month:"2-digit", day:"2-digit" });
+  };
+
+  function onDeptChange() {
+    const dept = document.getElementById("department").value;
+    document.getElementById("requesterEmail").value = DEPT_EMAIL[dept] || "";
+  }
+
+  function calcTotal() {
+    const qty   = parseFloat(document.getElementById("quantity").value)  || 0;
+    const price = parseFloat(document.getElementById("unitPrice").value) || 0;
+    document.getElementById("totalDisplay").textContent = "$" + (qty * price).toFixed(2);
+  }
+
+  // ── Photo handling ───────────────────────────────────────────
+  function handlePhotos(e) {
+    const incoming = Array.from(e.target.files);
+    const remaining = 3 - photos.length;
+    if (remaining <= 0) { alert("Maximum 3 photos allowed."); e.target.value=""; return; }
+
+    const toAdd = incoming.slice(0, remaining);
+    if (incoming.length > remaining) alert("Only " + remaining + " more photo(s) allowed. Extra files ignored.");
+
+    toAdd.forEach(f => photos.push(f));
+    e.target.value = "";
+    renderPhotos();
+    updatePhotoZone();
+  }
+
+  function renderPhotos() {
+    const container = document.getElementById("photoPreviews");
+    const countEl   = document.getElementById("photoCount");
+    container.innerHTML = "";
+    photos.forEach((f, i) => {
+      const thumb = document.createElement("div");
+      thumb.className = "photo-thumb";
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(f);
+      const btn = document.createElement("button");
+      btn.className = "remove-btn"; btn.type = "button"; btn.textContent = "×";
+      btn.onclick = () => { photos.splice(i,1); renderPhotos(); updatePhotoZone(); };
+      thumb.appendChild(img); thumb.appendChild(btn);
+      container.appendChild(thumb);
+    });
+    countEl.textContent = photos.length > 0 ? photos.length + " / 3 photo(s) selected" : "";
+  }
+
+  function updatePhotoZone() {
+    const zone = document.getElementById("photoZone");
+    if (photos.length >= 3) {
+      zone.style.opacity = "0.45";
+      zone.style.pointerEvents = "none";
+    } else {
+      zone.style.opacity = "1";
+      zone.style.pointerEvents = "auto";
+    }
+  }
+
+  // ── Attachment handling ──────────────────────────────────────
+  function handleAttach(e) {
+    Array.from(e.target.files).forEach(f => attachments.push(f));
+    e.target.value = "";
+    renderAttachments();
+  }
+
+  function renderAttachments() {
+    const list = document.getElementById("attachList");
+    list.innerHTML = "";
+    attachments.forEach((f, i) => {
+      const item = document.createElement("div");
+      item.className = "attach-item";
+      item.innerHTML = `<span class="attach-name">📄 ${f.name}</span>`;
+      const btn = document.createElement("button");
+      btn.className = "remove-btn"; btn.type = "button"; btn.textContent = "✕";
+      btn.onclick = () => { attachments.splice(i,1); renderAttachments(); };
+      item.appendChild(btn);
+      list.appendChild(item);
+    });
+  }
+
+  // ── File → base64 ───────────────────────────────────────────
+  function fileToBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = () => res(r.result.split(",")[1]);
+      r.onerror = () => rej(new Error("Read failed"));
+      r.readAsDataURL(file);
+    });
+  }
+
+  // ── Reset ───────────────────────────────────────────────────
+  function resetForm() {
+    document.getElementById("purchaseForm").reset();
+    document.getElementById("requesterEmail").value = "";
+    document.getElementById("totalDisplay").textContent = "$0.00";
+    photos = []; attachments = [];
+    renderPhotos(); renderAttachments(); updatePhotoZone();
+    const now = new Date();
+    document.getElementById("requestDate").value =
+      now.toLocaleDateString("en-US", { year:"numeric", month:"2-digit", day:"2-digit" });
+  }
+
+  function closeSuccess() {
+    document.getElementById("successOverlay").classList.remove("active");
+    resetForm();
+  }
+
+  // ── Submit ───────────────────────────────────────────────────
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Submitting...';
+
+    try {
+      const qty   = parseFloat(document.getElementById("quantity").value)  || 0;
+      const price = parseFloat(document.getElementById("unitPrice").value) || 0;
+
+      // Convert files to base64
+      const photoData = await Promise.all(
+        photos.map(async f => ({
+          name: f.name,
+          type: f.type,
+          data: await fileToBase64(f)
+        }))
+      );
+      const attachData = await Promise.all(
+        attachments.map(async f => ({
+          name: f.name,
+          type: f.type,
+          data: await fileToBase64(f)
+        }))
+      );
+
+      const payload = {
+        requesterName:  document.getElementById("requesterName").value.trim(),
+        department:     document.getElementById("department").value,
+        requesterEmail: document.getElementById("requesterEmail").value,
+        itemName:       document.getElementById("itemName").value.trim(),
+        quantity:       qty,
+        unit:           document.getElementById("unit").value,
+        unitPrice:      price,
+        estimatedTotal: (qty * price).toFixed(2),
+        vendor:         document.getElementById("vendor").value.trim(),
+        purpose:        document.getElementById("purpose").value.trim(),
+        notes:          document.getElementById("notes").value.trim(),
+        urgency:        document.querySelector('input[name="urgency"]:checked').value,
+        photos:         photoData,
+        attachments:    attachData
+      };
+
+      const res  = await fetch(APPS_SCRIPT_URL, { method:"POST", body: JSON.stringify(payload) });
+      const data = await res.json();
+
+      if (data.status === "success") {
+        document.getElementById("successReqId").textContent = data.requestId;
+        document.getElementById("successOverlay").classList.add("active");
+      } else {
+        alert("Error: " + (data.message || "Submission failed. Please try again."));
+      }
+    } catch (err) {
+      alert("Network error. Please check your connection and try again.");
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "🚀 &nbsp;Submit Request";
+    }
+  }
+</script>
+</body>
+</html>
