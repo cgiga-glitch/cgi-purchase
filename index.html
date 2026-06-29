@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CGI Purchase Request</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CGI Purchase">
+<meta name="theme-color" content="#1a3a5c">
+<link rel="apple-touch-icon" href="icon.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -559,14 +568,7 @@
     <strong>Julian</strong> will review and respond via email.<br>
     You will be notified once a decision is made.</p>
     <br>
-    <div id="successButtons" style="display:flex;gap:10px;margin-top:4px;">
-      <button class="btn btn-primary" onclick="closeSuccess()" style="flex:1">New Request</button>
-      <button class="btn btn-secondary" onclick="doneDismiss()" style="flex:1">Done</button>
-    </div>
-    <div id="doneMessage" style="display:none;margin-top:16px;padding:14px;background:#f0f4f8;border-radius:10px;">
-      <p style="color:#1a3a5c;font-weight:bold;margin:0;">Request complete!</p>
-      <p style="color:#6b7280;font-size:13px;margin:6px 0 0;">You may now close this tab.</p>
-    </div>
+    <button class="btn btn-primary" onclick="closeSuccess()" style="width:100%">Submit Another Request</button>
   </div>
 </div>
 
@@ -589,7 +591,7 @@
     "Sun Institute Manager": "manager@njintegrativehealth.com",
     "Sun Institute Assist":  "info@njintegrativehealth.com"
   };
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyV_IuHYdckvqileDvr4_1jKw7fBmMtbrMbvDdxZMi4fjIFyUvLrxv-OqAWYBHvO_dN/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBMI46WpXhk5HiSzmy9tp6duzBKVwLO1eqoIPkWe0fWKxf7pkhKXCCkIifBpd--A1Y/exec";
 
   // ── State ───────────────────────────────────────────────────
   let photos    = [];   // File objects (max 3)
@@ -706,11 +708,6 @@
     resetForm();
   }
 
-  function doneDismiss() {
-    document.getElementById("doneMessage").style.display = "block";
-    document.getElementById("successButtons").style.display = "none";
-  }
-
   // ── Submit ───────────────────────────────────────────────────
   async function handleSubmit(e) {
     e.preventDefault();
@@ -773,5 +770,15 @@
     }
   }
 </script>
+  <script>
+    // PWA Service Worker 등록
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/cgi-purchase/sw.js')
+          .then(function(reg) { console.log('SW registered'); })
+          .catch(function(err) { console.log('SW failed:', err); });
+      });
+    }
+  </script>
 </body>
 </html>
